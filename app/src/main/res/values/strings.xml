@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">IntervalTimer</string>
+    <string name="add_sets">Add sets</string>
+    <string name="total_time">Total Time: %d:%d</string>
+    <string name="start">START</string>
+    <string name="plus" translatable="false">+</string>
+    <string name="minus" translatable="false">-</string>
+    <string name="work">Work</string>
+    <string name="rest">Rest</string>
+    <string name="cycles">Cycles</string>
+    <string name="prev">Prev</string>
+    <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="time_left">Time left: %d:%d</string>
+    <string name="rounds_left">Rounds left: %d</string>
+    <string name="stop">Stop</string>
+    <string name="prep">PREP</string>
+    <string name="next_type_time">Next: %s %d</string>
+    <string name="end">END!</string>
+</resources>
