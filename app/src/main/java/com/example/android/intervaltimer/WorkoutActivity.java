@@ -1,7 +1,9 @@
 package com.example.android.intervaltimer;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -20,7 +22,7 @@ public class WorkoutActivity extends AppCompatActivity {
     private TextView roundsLeftTextView;
     private ConstraintLayout constraintLayout;
     private Button prevButton;
-    private Button pauseButton;
+    private Button pauseButton; //TODO pause functionality
     private Button nextButton;
 
     private final LinkedList<MyTimer> expandedTimers = new LinkedList<>();
@@ -33,12 +35,15 @@ public class WorkoutActivity extends AppCompatActivity {
     private boolean isTimerRunning = false;
     private long millisToCountTo = 0;
 
+    private MediaPlayer mMediaPlayer;
+    private int lastSecondPlayed = 0;
+
     //Handler and runnable for timers.
     private final Handler timerHandler = new Handler();
     private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
-            long currentTime = System.currentTimeMillis();
+            long currentTime = SystemClock.uptimeMillis();
             long millisRemaining = millisToCountTo - currentTime;
 
             //When the timer gets to 0.
@@ -49,7 +54,15 @@ public class WorkoutActivity extends AppCompatActivity {
                     stopHandler();
                     return;
                 }
-                currentTime = System.currentTimeMillis();
+                //After the countdown beeps there is a longer beep at the start of next timer.
+                if (currentPosition < expandedTimers.size()-2){
+                    if (mMediaPlayer != null){
+                        mMediaPlayer.release();
+                        mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.start_fast);
+                        mMediaPlayer.start();
+                    }
+                }
+                currentTime = SystemClock.uptimeMillis();
                 millisRemaining = millisToCountTo - currentTime;
             }
 
@@ -63,6 +76,15 @@ public class WorkoutActivity extends AppCompatActivity {
             double toRound = Math.ceil(millisRemaining / 1000.0);
             int seconds = (int) toRound;
 
+            if (seconds <= 3 && seconds != lastSecondPlayed && !mMediaPlayer.isPlaying()){
+                if (lastSecondPlayed == 0){
+                    mMediaPlayer.release();
+                    mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.beep_fast);
+                }
+                mMediaPlayer.start();
+                lastSecondPlayed = seconds;
+            }
+
             remainingTimeTextView.setText(String.format(Locale.getDefault(), "%d", seconds));
 
             int remainingTotalTime = totalTimeLeft - (expandedTimers.get(currentPosition).getTime() - seconds);
@@ -73,11 +95,28 @@ public class WorkoutActivity extends AppCompatActivity {
 
             //Call this function again after the given time. Should be low enough that seconds won't
             //"stretch" but not too low for performance reasons.
-            timerHandler.postDelayed(this, 100);
+            long millisRemainingThisSecond = millisRemaining % 1000;
+            long timeToCallback;
+            if (millisRemainingThisSecond <= 50){
+                timeToCallback = 10;
+            }else {
+                timeToCallback = millisRemainingThisSecond - 40;
+            }
+
+            timerHandler.postDelayed(this, timeToCallback);
             isTimerRunning = true;
         }
     };
 
+    /**
+     * Rewinds the media player by pausing it and seeking to 0 ms.
+     */
+    private void rewindMediaPlayer(){
+        if (mMediaPlayer != null){
+            mMediaPlayer.pause();
+            mMediaPlayer.seekTo(0);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +127,22 @@ public class WorkoutActivity extends AppCompatActivity {
         initializeTimesAndRounds();
         initializeViewsAndButtons();
         updateMillisToCountTo();
+
+        mMediaPlayer = MediaPlayer.create(this, R.raw.beep_fast);
+        //Rewind the audio on completion
+        mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                rewindMediaPlayer();
+            }
+        });
+        /*TODO change this bubblegum fix to a bug that happens when the first prep is skipped.
+        In that case the moveList tries to pause the mediaPlayer which is still in the 'prepared'
+        state and that state can't be paused. So now we just start the media player and immediately
+        rewind and pause it, so it will be in the 'started' state, which then can be paused.
+        */
+        mMediaPlayer.start();
+        rewindMediaPlayer();
 
         startTimer();
     }
@@ -174,9 +229,13 @@ public class WorkoutActivity extends AppCompatActivity {
 
     /**
      * Moves the list to the next or previous timer (if it exists) and updates the UI.
+     *
      * @param moveForward If true, the list moves forwards; if false, backwards.
      */
     private void moveList(boolean moveForward) {
+        rewindMediaPlayer();
+        lastSecondPlayed = 0;
+
         int change = moveForward ? 1 : -1;
 
         int newPosition = currentPosition + change;
@@ -207,7 +266,7 @@ public class WorkoutActivity extends AppCompatActivity {
             }
             //Set the text views specifically for the end of the list, so the next interval text
             //view won't show the text "Next: 0" and the remaining time is also empty.
-            if (newPositionTimer.getType() == MyTimer.END_TYPE){
+            if (newPositionTimer.getType() == MyTimer.END_TYPE) {
                 nextIntervalTextView.setText("");
                 remainingTimeTextView.setText("");
             }
@@ -223,7 +282,7 @@ public class WorkoutActivity extends AppCompatActivity {
         }
 
         //So the next interval text view doesn't show "Next: END! 0", only "END!".
-        if (expandedTimers.get(newPosition+1).getType() == MyTimer.END_TYPE){
+        if (expandedTimers.get(newPosition + 1).getType() == MyTimer.END_TYPE) {
             nextIntervalTextView.setText(getString(R.string.end));
         }
 
@@ -246,6 +305,7 @@ public class WorkoutActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         stopHandler();
+        mMediaPlayer.release();
     }
 
     /**
@@ -253,7 +313,7 @@ public class WorkoutActivity extends AppCompatActivity {
      */
     private void updateMillisToCountTo() {
         long countdownTime = expandedTimers.get(currentPosition).getTime() * 1000;
-        long startTime = System.currentTimeMillis();
+        long startTime = SystemClock.uptimeMillis();
         millisToCountTo = startTime + countdownTime;
     }
 
