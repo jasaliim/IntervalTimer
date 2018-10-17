@@ -10,6 +10,7 @@
     <string name="cycles">Cycles</string>
     <string name="prev">Prev</string>
     <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
     <string name="next">Next</string>
     <string name="time_left">Time left: %d:%d</string>
     <string name="rounds_left">Rounds left: %d</string>

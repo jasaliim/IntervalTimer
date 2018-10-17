@@ -14,7 +14,8 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        android:focusableInTouchMode="true">
 
         <TextView
             android:id="@+id/desc_tv"
@@ -31,12 +32,13 @@
             android:layout_weight="1"
             android:text="@string/minus" />
 
-        <TextView
-            android:id="@+id/time_tv"
+        <EditText
+            android:id="@+id/time_et"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:gravity="center"
+            android:inputType="number"
             tools:text="10" />
 
         <Button

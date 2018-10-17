@@ -3,10 +3,12 @@ package com.example.android.intervaltimer;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.LinkedList;
@@ -22,7 +24,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
     class WorkoutViewHolder extends RecyclerView.ViewHolder {
         final TextView descTextView;
         final Button minusButton;
-        final TextView timeTextView;
+        final EditText timeEditText;
         final Button plusButton;
         final Button deleteButton;
 
@@ -37,7 +39,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
 
             descTextView = itemView.findViewById(R.id.desc_tv);
             minusButton = itemView.findViewById(R.id.minus_button);
-            timeTextView = itemView.findViewById(R.id.time_tv);
+            timeEditText = itemView.findViewById(R.id.time_et);
             plusButton = itemView.findViewById(R.id.plus_button);
             deleteButton = itemView.findViewById(R.id.delete_button);
 
@@ -65,6 +67,28 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
                     deleteGivenSet(WorkoutViewHolder.this);
                 }
             });
+
+            timeEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (!hasFocus) {
+                        EditText ev = (EditText) v;
+                        String nmbString = ev.getText().toString();
+                        if (TextUtils.isEmpty(nmbString)) {
+                            ev.setText(String.format(Locale.getDefault(), "%d", mSeconds));
+                        }
+                        int seconds;
+                        try {
+                            seconds = Integer.parseInt(nmbString);
+                        } catch (NumberFormatException nfe){
+                            seconds = mSeconds;
+                        }
+                        mSeconds = seconds;
+                        updateTimeTextView();
+                        updateDatasetsWithNewSeconds(WorkoutViewHolder.this, mSeconds);
+                    }
+                }
+            });
         }
 
         private void updateTimeTextView() {
@@ -72,25 +96,26 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
                 mSeconds = 0;
                 return;
             }
-            timeTextView.setText(String.format(Locale.getDefault(), "%d", mSeconds));
+            timeEditText.setText(String.format(Locale.getDefault(), "%d", mSeconds));
         }
     }
 
     /**
      * Deletes the set, which the given view holder is part of. (Or more specifically, is the cycles
      * item of.)
+     *
      * @param holder The cycles item view to be deleted, along with its preceding work and rest items.
      */
     private void deleteGivenSet(WorkoutViewHolder holder) {
         //Don't allow deleting if there is currently only one set.
-        if (getItemCount() <= 4){
+        if (getItemCount() <= 4) {
             return;
         }
         int position = holder.getAdapterPosition();
         mDataset.remove(position);
-        mDataset.remove(position-1);
-        mDataset.remove(position-2);
-        notifyItemRangeRemoved(position-2, 3);
+        mDataset.remove(position - 1);
+        mDataset.remove(position - 2);
+        notifyItemRangeRemoved(position - 2, 3);
         updateMainActivityDataset();
     }
 
@@ -126,10 +151,11 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
     /**
      * Updates this adapters dataset list and the main activity's time list.
      * Assumes that the view holder and its corresponding MyTimer are at the same index.
+     *
      * @param workoutViewHolder The view holder which time was changed.
-     * @param newSeconds The new time.
+     * @param newSeconds        The new time.
      */
-    private void updateDatasetsWithNewSeconds(WorkoutViewHolder workoutViewHolder, int newSeconds){
+    private void updateDatasetsWithNewSeconds(WorkoutViewHolder workoutViewHolder, int newSeconds) {
         mDataset.get(workoutViewHolder.getAdapterPosition()).setTime(newSeconds);
         updateMainActivityDataset();
     }

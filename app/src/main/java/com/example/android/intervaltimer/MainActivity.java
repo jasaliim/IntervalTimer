@@ -6,11 +6,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.LinkedList;
 import java.util.Locale;
+
+//TODO ui fixes, at least borders etc.
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //While the activity is on top, keep the screen on.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         initializeTimes();
 
         Button addSetsButton = findViewById(R.id.add_sets_button);
@@ -47,6 +53,13 @@ public class MainActivity extends AppCompatActivity {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    //Need to clear possible focus from edit text, so the onFocusChange
+                    //gets called and the given number gets updated in the data sets.
+                    getCurrentFocus().clearFocus();
+                } catch (NullPointerException npe) {
+                    //If no view has focus, do nothing.
+                }
                 Intent intent = new Intent(MainActivity.this, WorkoutActivity.class);
                 startActivity(intent);
             }

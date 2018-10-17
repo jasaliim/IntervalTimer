@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -22,7 +23,7 @@ public class WorkoutActivity extends AppCompatActivity {
     private TextView roundsLeftTextView;
     private ConstraintLayout constraintLayout;
     private Button prevButton;
-    private Button pauseButton; //TODO pause functionality
+    private Button pauseButton;
     private Button nextButton;
     private Button soundOnOffButton;
     private Button stopButton;
@@ -40,6 +41,9 @@ public class WorkoutActivity extends AppCompatActivity {
     private MediaPlayer mMediaPlayer;
     private int lastSecondPlayed = 0;
     private boolean soundOn = true;
+
+    private boolean isPaused = false;
+    private long timePausedAtMillis = 0;
 
     //Handler and runnable for timers.
     private final Handler timerHandler = new Handler();
@@ -125,6 +129,9 @@ public class WorkoutActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_workout);
+
+        //While the activity is on top, keep the screen on.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         assignViews();
         initializeTimesAndRounds();
@@ -236,38 +243,66 @@ public class WorkoutActivity extends AppCompatActivity {
         soundOnOffButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                soundOn = !soundOn;
-
-                //If sound is now off, release the media player. Else initialize it again.
-                if (!soundOn && mMediaPlayer != null) {
-                    mMediaPlayer.release();
-                } else {
-                    if (lastSecondPlayed == 1) {
-                        mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.start_fast);
-                    } else {
-                        mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.beep_fast);
-                    }
-
-                }
-                //Set the correct text to the button.
-                if (soundOn){
-                    soundOnOffButton.setText(R.string.on);
-                }else{
-                    soundOnOffButton.setText(R.string.off);
-                }
-
+                toggleSound();
             }
         });
 
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mMediaPlayer != null){
+                if (mMediaPlayer != null) {
                     mMediaPlayer.release();
                 }
                 finish();
             }
         });
+
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pauseOrResumeTheWorkout();
+            }
+        });
+    }
+
+    //Pauses/resumes the workout.
+    private void pauseOrResumeTheWorkout() {
+        if (!isPaused) {
+            stopHandler();
+            timePausedAtMillis = System.currentTimeMillis();
+            isPaused = true;
+            pauseButton.setText(R.string.resume);
+        } else {
+            millisToCountTo += System.currentTimeMillis() - timePausedAtMillis;
+            startTimer();
+            isPaused = false;
+            pauseButton.setText(R.string.pause);
+        }
+    }
+
+    /**
+     * Toggles the sound on/off
+     */
+    private void toggleSound() {
+        soundOn = !soundOn;
+
+        //If sound is now off, release the media player. Else initialize it again.
+        if (!soundOn && mMediaPlayer != null) {
+            mMediaPlayer.release();
+        } else {
+            if (lastSecondPlayed == 1) {
+                mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.start_fast);
+            } else {
+                mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.beep_fast);
+            }
+
+        }
+        //Set the correct text to the button.
+        if (soundOn) {
+            soundOnOffButton.setText(R.string.on);
+        } else {
+            soundOnOffButton.setText(R.string.off);
+        }
     }
 
     /**
@@ -332,7 +367,12 @@ public class WorkoutActivity extends AppCompatActivity {
         currentPosition = newPosition;
 
         updateTotalTimeLeft();
-        startTimer();
+
+        if (isPaused) {
+            timePausedAtMillis = System.currentTimeMillis();
+        } else {
+            startTimer();
+        }
         updateMillisToCountTo();
     }
 
@@ -349,7 +389,20 @@ public class WorkoutActivity extends AppCompatActivity {
         super.onPause();
         stopHandler();
         mMediaPlayer.release();
+        mMediaPlayer = null;
+        if (!isPaused){
+            pauseOrResumeTheWorkout();
+        }
     }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        if (mMediaPlayer == null){
+            mMediaPlayer = MediaPlayer.create(this, R.raw.beep_fast);
+        }
+    }
+
 
     /**
      * Updates the milliseconds long which the timer is counting to.
