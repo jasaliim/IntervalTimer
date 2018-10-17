@@ -24,6 +24,8 @@ public class WorkoutActivity extends AppCompatActivity {
     private Button prevButton;
     private Button pauseButton; //TODO pause functionality
     private Button nextButton;
+    private Button soundOnOffButton;
+    private Button stopButton;
 
     private final LinkedList<MyTimer> expandedTimers = new LinkedList<>();
     private int totalTime = 0;
@@ -37,6 +39,7 @@ public class WorkoutActivity extends AppCompatActivity {
 
     private MediaPlayer mMediaPlayer;
     private int lastSecondPlayed = 0;
+    private boolean soundOn = true;
 
     //Handler and runnable for timers.
     private final Handler timerHandler = new Handler();
@@ -55,8 +58,8 @@ public class WorkoutActivity extends AppCompatActivity {
                     return;
                 }
                 //After the countdown beeps there is a longer beep at the start of next timer.
-                if (currentPosition < expandedTimers.size()-2){
-                    if (mMediaPlayer != null){
+                if (currentPosition < expandedTimers.size() - 2) {
+                    if (mMediaPlayer != null && soundOn) {
                         mMediaPlayer.release();
                         mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.start_fast);
                         mMediaPlayer.start();
@@ -76,8 +79,8 @@ public class WorkoutActivity extends AppCompatActivity {
             double toRound = Math.ceil(millisRemaining / 1000.0);
             int seconds = (int) toRound;
 
-            if (seconds <= 3 && seconds != lastSecondPlayed && !mMediaPlayer.isPlaying()){
-                if (lastSecondPlayed == 0){
+            if (seconds <= 3 && seconds != lastSecondPlayed && soundOn && mMediaPlayer != null) {
+                if (lastSecondPlayed == 0) {
                     mMediaPlayer.release();
                     mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.beep_fast);
                 }
@@ -97,9 +100,9 @@ public class WorkoutActivity extends AppCompatActivity {
             //"stretch" but not too low for performance reasons.
             long millisRemainingThisSecond = millisRemaining % 1000;
             long timeToCallback;
-            if (millisRemainingThisSecond <= 50){
+            if (millisRemainingThisSecond <= 50) {
                 timeToCallback = 10;
-            }else {
+            } else {
                 timeToCallback = millisRemainingThisSecond - 40;
             }
 
@@ -111,8 +114,8 @@ public class WorkoutActivity extends AppCompatActivity {
     /**
      * Rewinds the media player by pausing it and seeking to 0 ms.
      */
-    private void rewindMediaPlayer(){
-        if (mMediaPlayer != null){
+    private void rewindMediaPlayer() {
+        if (mMediaPlayer != null && soundOn) {
             mMediaPlayer.pause();
             mMediaPlayer.seekTo(0);
         }
@@ -141,8 +144,10 @@ public class WorkoutActivity extends AppCompatActivity {
         state and that state can't be paused. So now we just start the media player and immediately
         rewind and pause it, so it will be in the 'started' state, which then can be paused.
         */
-        mMediaPlayer.start();
-        rewindMediaPlayer();
+        if (soundOn) {
+            mMediaPlayer.start();
+            rewindMediaPlayer();
+        }
 
         startTimer();
     }
@@ -154,12 +159,14 @@ public class WorkoutActivity extends AppCompatActivity {
         remainingTimeTextView = findViewById(R.id.remaining_time_text_view);
         currentTypeTextView = findViewById(R.id.current_type_text_view);
         nextIntervalTextView = findViewById(R.id.next_interval_text_view);
-        prevButton = findViewById(R.id.prev_button);
-        pauseButton = findViewById(R.id.pause_button);
-        nextButton = findViewById(R.id.next_button);
         totalTimeLeftTextView = findViewById(R.id.total_time_left_text_view);
         roundsLeftTextView = findViewById(R.id.rounds_left_text_view);
         constraintLayout = findViewById(R.id.constraint_layout);
+        prevButton = findViewById(R.id.prev_button);
+        pauseButton = findViewById(R.id.pause_button);
+        nextButton = findViewById(R.id.next_button);
+        soundOnOffButton = findViewById(R.id.sound_button);
+        stopButton = findViewById(R.id.stop_button);
     }
 
     /**
@@ -223,6 +230,42 @@ public class WorkoutActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 moveList(true);
+            }
+        });
+
+        soundOnOffButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                soundOn = !soundOn;
+
+                //If sound is now off, release the media player. Else initialize it again.
+                if (!soundOn && mMediaPlayer != null) {
+                    mMediaPlayer.release();
+                } else {
+                    if (lastSecondPlayed == 1) {
+                        mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.start_fast);
+                    } else {
+                        mMediaPlayer = MediaPlayer.create(WorkoutActivity.this, R.raw.beep_fast);
+                    }
+
+                }
+                //Set the correct text to the button.
+                if (soundOn){
+                    soundOnOffButton.setText(R.string.on);
+                }else{
+                    soundOnOffButton.setText(R.string.off);
+                }
+
+            }
+        });
+
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mMediaPlayer != null){
+                    mMediaPlayer.release();
+                }
+                finish();
             }
         });
     }

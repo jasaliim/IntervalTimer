@@ -19,8 +19,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView totalTimeTextView;
 
     private static final int DEFAULT_PREP_TIME = 5;  //TODO move these later to the settings page
-    private static final int DEFAULT_WORK_TIME = 4;
-    private static final int DEFAULT_REST_TIME = 4;
+    private static final int DEFAULT_WORK_TIME = 45;
+    private static final int DEFAULT_REST_TIME = 10;
     private static final int DEFAULT_CYCLES = 10;
 
     private static LinkedList<MyTimer> times = new LinkedList<>();

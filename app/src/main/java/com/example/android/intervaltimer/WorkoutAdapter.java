@@ -46,7 +46,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
                 public void onClick(View v) {
                     mSeconds--;
                     updateTimeTextView();
-                    updateThisViewHolder();
+                    updateDatasetsWithNewSeconds(WorkoutViewHolder.this, mSeconds);
                 }
             });
 
@@ -55,7 +55,14 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
                 public void onClick(View v) {
                     mSeconds++;
                     updateTimeTextView();
-                    updateThisViewHolder();
+                    updateDatasetsWithNewSeconds(WorkoutViewHolder.this, mSeconds);
+                }
+            });
+
+            deleteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    deleteGivenSet(WorkoutViewHolder.this);
                 }
             });
         }
@@ -67,14 +74,24 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
             }
             timeTextView.setText(String.format(Locale.getDefault(), "%d", mSeconds));
         }
+    }
 
-        /**
-         * Updates the new time to the adapters and main activity's time lists.
-         */
-        private void updateThisViewHolder(){
-            updateDatasets(this, mSeconds);
+    /**
+     * Deletes the set, which the given view holder is part of. (Or more specifically, is the cycles
+     * item of.)
+     * @param holder The cycles item view to be deleted, along with its preceding work and rest items.
+     */
+    private void deleteGivenSet(WorkoutViewHolder holder) {
+        //Don't allow deleting if there is currently only one set.
+        if (getItemCount() <= 4){
+            return;
         }
-
+        int position = holder.getAdapterPosition();
+        mDataset.remove(position);
+        mDataset.remove(position-1);
+        mDataset.remove(position-2);
+        notifyItemRangeRemoved(position-2, 3);
+        updateMainActivityDataset();
     }
 
     WorkoutAdapter(LinkedList<MyTimer> dataset, Context context) {
@@ -112,7 +129,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutV
      * @param workoutViewHolder The view holder which time was changed.
      * @param newSeconds The new time.
      */
-    private void updateDatasets(WorkoutViewHolder workoutViewHolder, int newSeconds){
+    private void updateDatasetsWithNewSeconds(WorkoutViewHolder workoutViewHolder, int newSeconds){
         mDataset.get(workoutViewHolder.getAdapterPosition()).setTime(newSeconds);
         updateMainActivityDataset();
     }

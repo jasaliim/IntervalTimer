@@ -17,4 +17,6 @@
     <string name="prep">PREP</string>
     <string name="next_type_time">Next: %s %d</string>
     <string name="end">END!</string>
+    <string name="on">SND: ON</string>
+    <string name="off">SND: OFF</string>
 </resources>

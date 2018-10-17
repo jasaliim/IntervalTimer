@@ -9,7 +9,8 @@
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent"
-    tools:context=".WorkoutActivity">
+    tools:context=".WorkoutActivity"
+    >
 
 
     <android.support.constraint.ConstraintLayout
@@ -33,12 +34,12 @@
 
         <Button
             android:id="@+id/sound_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_marginEnd="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginTop="8dp"
-            android:text="Snd"
+            android:text="@string/on"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="HardcodedText" />
